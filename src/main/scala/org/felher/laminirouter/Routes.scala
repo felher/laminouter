@@ -91,9 +91,14 @@ object Routes:
       val pathValDefs: List[ValDef]            = pathParams.params
       val pathCodecsExpr: Expr[List[Codec[?]]] = Expr.ofList(pathValDefs.map(summonCodec))
 
-      val searchValDefs: List[ValDef]            = searchParams.params
-      val searchCodecsExpr: Expr[List[Codec[?]]] = Expr.ofList(searchValDefs.map(summonCodec))
-      val searchKeysExpr: Expr[List[String]]     = Expr(searchValDefs.map(_.name))
+      val searchValDefs: List[ValDef]                = searchParams.params
+      val searchCodecsExpr: Expr[List[Codec[?]]]     = Expr.ofList(searchValDefs.map(summonCodecUnwrapOption))
+      val searchKeysExpr: Expr[List[String]]         = Expr(searchValDefs.map(_.name))
+      val optionalSearchKeysExpr: Expr[List[String]] = Expr.ofList:
+        searchValDefs.flatMap: vd =>
+          vd.tpt.tpe.asType match
+            case '[Option[t]] => List(Expr(vd.name))
+            case _            => Nil
 
       def instantiate(pathValues: Expr[List[?]], searchValues: Expr[Map[String, ?]]): Expr[A] =
         Apply(
@@ -108,7 +113,8 @@ object Routes:
           ),
           searchValDefs.map: vd =>
             vd.tpt.tpe.asType match
-              case '[t] => '{ $searchValues(${ Expr(vd.name) }).asInstanceOf[t] }.asTerm
+              case '[Option[t]] => '{ $searchValues.get(${ Expr(vd.name) }).asInstanceOf[Option[t]] }.asTerm
+              case '[t]         => '{ $searchValues(${ Expr(vd.name) }).asInstanceOf[t] }.asTerm
         ).asExprOf[A]
 
       '{ (url: URL) =>
@@ -126,15 +132,18 @@ object Routes:
             else
               val pathValues                         = maybePathValues.map(_.get)
               val searchParams                       = url.searchParams
+              val optionalSearchKeys: List[String]   = $optionalSearchKeysExpr
               val maybeSearchValues: List[Option[?]] = searchKeys
                 .zip(searchCodecs)
                 .map: (key, codec) =>
                   Option(searchParams.get(key)).flatMap(codec.decode)
 
-              if maybeSearchValues.exists(_.isEmpty) then None
-              else
-                val searchValues = searchKeys.zip(maybeSearchValues.map(_.get)).toMap
-                Some(${ instantiate('pathValues, 'searchValues) })
+              val searchValues = searchKeys.zip(maybeSearchValues)
+                .collect:
+                  case (key, Some(value)) => key -> value
+                .toMap
+              if (searchKeys.toSet -- optionalSearchKeys.toSet).exists(key => !searchValues.contains(key)) then None
+              else Some(${ instantiate('pathValues, 'searchValues) })
       }
 
     private def summonCodec(vd: ValDef): Expr[Codec[?]] =
@@ -145,24 +154,18 @@ object Routes:
         case success: ImplicitSearchSuccess =>
           success.tree.asExprOf[Codec[?]]
 
-    private def summonSummonedCodec(vd: ValDef): SummonedCodec[?] =
-      val (tpeRepr, optional) = vd.tpt.tpe.asType match
-        case '[Option[t]] => (TypeRepr.of[t], true)
-        case '[t]         => (TypeRepr.of[t], false)
-
-      val codecType = TypeRepr.of[Codec].appliedTo(tpeRepr)
+    private def summonCodecUnwrapOption(vd: ValDef): Expr[Codec[?]] =
+      val codecType = TypeRepr
+        .of[Codec]
+        .appliedTo(vd.tpt.tpe.asType match
+          case '[Option[t]] => TypeRepr.of[t]
+          case _            => vd.tpt.tpe
+        )
       Implicits.search(codecType) match
         case _: ImplicitSearchFailure       =>
           sys.error(s"Cannot find implicit codec: ${codecType.show}")
         case success: ImplicitSearchSuccess =>
-          tpeRepr.asType match
-            case '[t] =>
-              SummonedCodec[t](
-                vd,
-                tpeRepr.asType.asInstanceOf[Type[t]],
-                success.tree.asExprOf[Codec[t]],
-                optional
-              )
+          success.tree.asExprOf[Codec[?]]
 
     private def buildDecoderForValDef(name: String, child: Symbol): Expr[URL => Option[A]] =
       val nameExpr  = Expr(name)
@@ -227,7 +230,7 @@ object Routes:
       val pathCodecsExpr = Expr.ofList(pathValDefs.map(summonCodec))
 
       val searchValDefs    = searchParams.params
-      val searchCodecsExpr = Expr.ofList(searchValDefs.map(summonCodec))
+      val searchCodecsExpr = Expr.ofList(searchValDefs.map(summonCodecUnwrapOption))
 
       child.typeRef.asType match
         case '[t] =>
@@ -259,24 +262,37 @@ object Routes:
     private def buildSearch[T](value: Expr[T], vals: List[ValDef], codecsExpr: Expr[List[Codec[?]]])(using
         Type[T]
     ): Expr[URLSearchParams] =
-      val parts = vals.zipWithIndex.map: (vd, i) =>
-        val select = Select.unique(value.asTerm, vd.name).asExpr
-        vd.tpt.tpe.asType match
-          case '[t] =>
-            '{
-              val value  = $select
-              val codecs = $codecsExpr
+      val parts: List[Expr[Option[(String, String)]]] =
+        vals.zipWithIndex.map: (vd, i) =>
+          val select = Select.unique(value.asTerm, vd.name).asExpr
+          vd.tpt.tpe.asType match
+            case '[Option[t]] =>
+              '{
+                val value  = $select.asInstanceOf[Option[t]]
+                val codecs = $codecsExpr
 
-              val encoded = scalajs.js.URIUtils.encodeURIComponent(codecs(${
-                Expr(i)
-              }).asInstanceOf[Codec[t]].encode(value.asInstanceOf[t]))
+                value.map: value =>
+                  val encoded = scalajs.js.URIUtils.encodeURIComponent(codecs(${
+                    Expr(i)
+                  }).asInstanceOf[Codec[t]].encode(value.asInstanceOf[t]))
 
-              ${ Expr(vd.name) } -> encoded
-            }
+                  ${ Expr(vd.name) } -> encoded
+              }
+            case '[t]         =>
+              '{
+                val value  = $select
+                val codecs = $codecsExpr
+
+                val encoded = scalajs.js.URIUtils.encodeURIComponent(codecs(${
+                  Expr(i)
+                }).asInstanceOf[Codec[t]].encode(value.asInstanceOf[t]))
+
+                Some(${ Expr(vd.name) } -> encoded)
+              }
 
       '{
         val params = new URLSearchParams()
-        ${ Expr.ofList(parts) }.foldLeft(params): (params, pair) =>
+        ${ Expr.ofList(parts) }.flatten.foldLeft(params): (params, pair) =>
           val (key, value) = pair
           params.append(key, value)
           params
@@ -288,13 +304,6 @@ object Routes:
         val encoderIndex = ${ Select.unique('value.asTerm, "ordinal").asExprOf[Int] }
         $encoderList(encoderIndex).asInstanceOf[(URL, Any) => URL](base, value)
       }
-
-    private case class SummonedCodec[T](
-        valDef: ValDef,
-        tpe: Type[T],
-        codec: Expr[Codec[T]],
-        isOptional: Boolean
-    )
 
   private def getValueSegments(url: URL, routeName: String, numSegments: Int): Option[List[String]] =
     def checkAndStripPrefix(s: String): Option[String] =

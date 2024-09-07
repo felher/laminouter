@@ -36,9 +36,27 @@ object LaminirouteSpec extends TestSuite:
       assert(decoded.get.asInstanceOf[Route.MultiParamQuery].filter == "red")
     }
 
-    println(routes.encode(dom.URL("https://www.heise.de:8080/a/b/c?test"), Route.Home))
-    println(routes.encode(dom.URL("https://www.heise.de:8080/a/b/c?test"), Route.MultiParam("user-name", 999)))
-    println(routes.encode(dom.URL("https://www.heise.de:8080/a/b/c?test"), Route.MultiParamQuery("user-name", 999)(333, "red")))
+    test(
+      "Class with path and search parameters (required and optional) should decode correctly if optional is there"
+    ) - {
+      val decoded =
+        routes.decode(dom.URL("https://www.heise.de:8080/MultiParamQueryOptional/user-name/999?page=123&filter=red"))
+      assert(decoded.nonEmpty)
+      assert(decoded.get == Route.MultiParamQueryOptional("user-name", 999)(0, None))
+      assert(decoded.get.asInstanceOf[Route.MultiParamQueryOptional].page == 123)
+      assert(decoded.get.asInstanceOf[Route.MultiParamQueryOptional].filter == Some("red"))
+    }
+
+    test(
+      "Class with path and search parameters (required and optional) should decode correctly if optional is not there"
+    ) - {
+      val decoded =
+        routes.decode(dom.URL("https://www.heise.de:8080/MultiParamQueryOptional/user-name/999?page=123"))
+      assert(decoded.nonEmpty)
+      assert(decoded.get == Route.MultiParamQueryOptional("user-name", 999)(0, None))
+      assert(decoded.get.asInstanceOf[Route.MultiParamQueryOptional].page == 123)
+      assert(decoded.get.asInstanceOf[Route.MultiParamQueryOptional].filter == None)
+    }
   }
 
   enum Route derives CanEqual:
@@ -46,3 +64,4 @@ object LaminirouteSpec extends TestSuite:
     case SingleParam(id: Int)
     case MultiParam(user: String, message: Int)
     case MultiParamQuery(user: String, message: Int)(val page: Int, val filter: String)
+    case MultiParamQueryOptional(user: String, message: Int)(val page: Int, val filter: Option[String])
