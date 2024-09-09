@@ -2,6 +2,15 @@
 
 Laminouter is an ergonomic, minimalistic-to-a-fault router for Laminar on Scala 3.
 
+## Table of Contents
+- [Usage](#usage)
+- [Who should use it](#who-should-use-it)
+- [Notes](#notes)
+  - [How get rid of the `asInstanceOf`?](#how-get-rid-of-the-asinstanceof)
+  - [What's up with the multiple parameter lists?](#whats-up-with-the-multiple-parameter-lists)
+- [Binary, Output And Laminar Compatibility](#binary-output-and-laminar-compatibility)
+- [Contributions](#contributions)
+
 ## Usage
 
 The usage is extremely simple.
@@ -62,17 +71,16 @@ The usage is extremely simple.
     
 
 ## Who should use it
-Laminouter is an extremely simple router. The most important design goal was to provide a router for small sites where you don't have to remember anything on how to use it. Declaration of routes should be as easy as declaring an enum (which it in fact is), the output should just be a signal and adding navigation to an element should only need a single modifier.
+Laminouter is an extremely simple router. The most important design goal was to provide a router for small sites so you don't have to remember anything on how to use it. Declaration of routes should be as easy as declaring an enum (which it in fact is), the output should just be a signal and adding navigation to an element should only need a single modifier.
 
 That said, to keep things simple, we had to make some serious concessions. If the following list describes you, Laminouter is made for you:
 
-1. I don't care about nesting routes
-2. I only care about scala 3
+1. I only care about scala 3
+2. I don't care about nesting routes
 3. I don't really care how my routes are represented in the URL
 4. I'm fine with History-API based routing and don't need fragment (`#`) based routing
 
 Still here? Welcome to the I-Just-Dont-Care-Club then!
-
 
 ## Notes
 ### How get rid of the `asInstanceOf`?
