@@ -1,13 +1,13 @@
 ThisBuild / organization         := "org.felher"
 ThisBuild / organizationName     := "Felix Herrmann"
-ThisBuild / version              := "1.0.0-SNAPSHOT"
+ThisBuild / version              := "0.17.0"
 ThisBuild / organizationHomepage := Some(url("https://felher.org"))
 ThisBuild / scalaVersion         := "3.3.3"
 
 ThisBuild / scmInfo := Some(
   ScmInfo(
-    url("https://github.com/felher/laminiroute/"),
-    "scm:git@github.com:felher/laminiroute.git"
+    url("https://github.com/felher/laminouter/"),
+    "scm:git@github.com:felher/laminouter.git"
   )
 )
 
@@ -22,7 +22,7 @@ ThisBuild / developers := List(
 
 ThisBuild / description       := "An ergonomic but minimalistic-to-a-fault router for Laminar"
 ThisBuild / licenses          := List(sbt.librarymanagement.License.MIT)
-ThisBuild / homepage          := Some(url("https://github.com/felher/laminiroute/"))
+ThisBuild / homepage          := Some(url("https://github.com/felher/laminouter/"))
 ThisBuild / publishTo         := sonatypePublishToBundle.value
 ThisBuild / publishMavenStyle := true
 
@@ -30,10 +30,10 @@ lazy val root = project
   .in(file("."))
   .enablePlugins(ScalaJSPlugin)
   .settings(
-    name         := "laminiroute",
+    name                   := "laminouter",
     usePgpKeyHex("DE132E3B66E5239F490F52AB3DA07E9E7CFDB415"),
     Test / publishArtifact := true,
-    mimaPreviousArtifacts  := Set("org.felher" %%% "laminiroute" % "1.0.0"),
+    mimaPreviousArtifacts  := Set("org.felher" %%% "laminouter" % "0.17.0"),
     scalacOptions ++= Seq(
       "-language:strictEquality",
       "-feature",
@@ -59,10 +59,10 @@ lazy val testMatrix = project
   .enablePlugins(ScalaJSPlugin)
   .settings(
     libraryDependencies ++= Seq(
-      "com.raquo"   %%% "laminar" % "17.1.0",
-      "org.felher"  %%% "laminiroute" % "1.0.0",
-      "org.felher"  %%% "laminiroute" % "1.0.0" % Test classifier "tests",
-      "com.lihaoyi" %%% "utest"   % "0.8.4" % Test
+      "com.raquo"   %%% "laminar"    % "17.1.0",
+      "org.felher"  %%% "laminouter" % "0.17.0",
+      "org.felher"  %%% "laminouter" % "0.17.0" % Test classifier "tests",
+      "com.lihaoyi" %%% "utest"      % "0.8.4" % Test
     ),
     jsEnv := new org.scalajs.jsenv.jsdomnodejs.JSDOMNodeJSEnv(),
     testFrameworks += new TestFramework("utest.runner.Framework"),
@@ -70,24 +70,24 @@ lazy val testMatrix = project
       final case class CompatTestKey(
           scalaVersion: String,
           laminarVersion: String,
-          laminirouteVersion: String
+          laminouterVersion: String
       )
 
-      val laminarVersions = List("0.14.5", "15.0.1", "16.0.0", "17.0.0", "17.1.0")
-      val laminirouteVersions = List("0.16.0", "1.0.0")
-      val scalaVersions   = List("3.3.3")
-      val allTestKeys     = for {
-        scalaVersion   <- scalaVersions
-        laminarVersion <- laminarVersions
-        laminirouteVersion <- laminirouteVersions
-      } yield CompatTestKey(scalaVersion, laminarVersion, laminirouteVersion)
+      val laminarVersions    = List("0.14.5", "15.0.1", "16.0.0", "17.0.0", "17.1.0")
+      val laminouterVersions = List("0.17.0")
+      val scalaVersions      = List("3.3.3")
+      val allTestKeys        = for {
+        scalaVersion      <- scalaVersions
+        laminarVersion    <- laminarVersions
+        laminouterVersion <- laminouterVersions
+      } yield CompatTestKey(scalaVersion, laminarVersion, laminouterVersion)
 
-      def setVersions(depList: Seq[ModuleID], laminarVersion: String, laminirouteVersion: String): Seq[ModuleID] =
+      def setVersions(depList: Seq[ModuleID], laminarVersion: String, laminouterVersion: String): Seq[ModuleID] =
         depList.map(dep => {
           if (dep.organization == "com.raquo" && dep.name == "laminar") {
             dep.withRevision(laminarVersion)
-          } else if (dep.organization == "org.felher" && dep.name == "laminiroute") {
-            dep.withRevision(laminirouteVersion)
+          } else if (dep.organization == "org.felher" && dep.name == "laminouter") {
+            dep.withRevision(laminouterVersion)
           } else {
             dep
           }
@@ -102,19 +102,19 @@ lazy val testMatrix = project
         // to trigger scalajs updating the dependency list.
         val withNewScala = Command.process("set scalaVersion := \"" + testKey.scalaVersion + "\"", state)
         val oldDepList   = Project.extract(withNewScala).get(libraryDependencies)
-        val newDepList   = setVersions(oldDepList, testKey.laminarVersion, testKey.laminirouteVersion)
+        val newDepList   = setVersions(oldDepList, testKey.laminarVersion, testKey.laminouterVersion)
         val newSettings  = Seq(libraryDependencies := newDepList)
         val testState    = Project.extract(withNewScala).appendWithSession(newSettings, withNewScala)
         val testsOk      = Project.runTask(Test / test, testState).fold(false)(_._2.toEither.isRight)
         results + (testKey -> testsOk)
       })
 
-      val header  = "||" + laminirouteVersions.map("Beminar " + _).mkString("|") + "|"
-      val sepator = "|" + List.fill(laminirouteVersions.size + 1)("-").mkString("|") + "|"
+      val header  = "||" + laminouterVersions.map("Laminouter " + _).mkString("|") + "|"
+      val sepator = "|" + List.fill(laminouterVersions.size + 1)("-").mkString("|") + "|"
 
-      def makeCell(laminarVersion: String, laminirouteVersion: String): String = {
+      def makeCell(laminarVersion: String, laminouterVersion: String): String = {
         val passed = results.filter(entry =>
-          entry._1.laminarVersion == laminarVersion && entry._1.laminirouteVersion == laminirouteVersion && entry._2
+          entry._1.laminarVersion == laminarVersion && entry._1.laminouterVersion == laminouterVersion && entry._2
         )
         if (passed.isEmpty) {
           "❌"
@@ -122,8 +122,8 @@ lazy val testMatrix = project
           "scala " + passed.keys.map(_.scalaVersion).toList.sorted.map(_.replaceAll("\\.\\d+$", "")).mkString(", ")
         }
       }
-      def makeRow(laminarVersion: String): String                          = {
-        val cells = laminirouteVersions.map(makeCell(laminarVersion, _))
+      def makeRow(laminarVersion: String): String                             = {
+        val cells = laminouterVersions.map(makeCell(laminarVersion, _))
         s"| Laminar $laminarVersion | ${cells.mkString("|")} |"
       }
 
