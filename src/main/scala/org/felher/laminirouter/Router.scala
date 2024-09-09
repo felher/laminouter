@@ -1,18 +1,34 @@
-package org.felher.laminiroute
+package org.felher.laminouter
 
 import org.scalajs.dom
 
 import com.raquo.laminar.api.L.*
 
+/**
+  * A router that parses the current URL, gives you a signal of the routes and let's navigate away.
+  */
 trait Router[A]:
+  /** The current route. None if the URL does not match any route. */
   def route: Signal[Option[A]]
+
+  /** The current route. Fallback if the URL does not match any route. */
   def routeWithFallback(fallback: A): Signal[A] = route.map(_.getOrElse(fallback))
 
+  /**
+    * A modifier to bind to an element to navigate to a route.
+    *
+    * For example:
+    * {{{
+    *  val router = Router[Route]
+    *  a(router.target(Route.Home), "Home")
+    *  button(router.target(Route.BlogPost(123)), "Blog post 123")
+    * }}}
+    */
   def target(a: A): Binder[HtmlElement]
 
 object Router:
   private def getCurrentURL(): dom.URL = dom.URL(dom.window.location.href)
-  private val currentURL                       = Var(getCurrentURL())
+  private val currentURL               = Var(getCurrentURL())
 
   windowEvents(_.onPopState).foreach(_ => currentURL.set(getCurrentURL()))(using unsafeWindowOwner)
 

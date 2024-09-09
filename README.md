@@ -8,7 +8,7 @@ Laminouter is an ergonomic, minimalistic-to-a-fault router for Laminar on Scala 
 - [Notes](#notes)
   - [How get rid of the `asInstanceOf`?](#how-get-rid-of-the-asinstanceof)
   - [What's up with the multiple parameter lists?](#whats-up-with-the-multiple-parameter-lists)
-- [Binary, Output And Laminar Compatibility](#binary-output-and-laminar-compatibility)
+- [Binary And Laminar Compatibility](#binary-and-laminar-compatibility)
 - [Contributions](#contributions)
 
 ## Usage
@@ -22,11 +22,11 @@ The usage is extremely simple.
     ```
 2. Declare your routes:
     ```scala
-    enum Route:
+    enum Route derives CanEqual:
         case Home                                          // site.com/home
         case Category(category: String))                   // site.com/category/scala
-        case BlogPost(post: Int)(val comment: Option[Int]) // site.com/blogpost/123 or
-                                                           // site.com/blogpost/123?comment=456
+        case BlogPost(post: Int)(val comment: Option[Int]) // site.com/blogPost/123 or
+                                                           // site.com/blogPost/123?comment=456
     ```
     You might have noticed the `val` keyword and use of multiple parameter lists. Find out more 
     [here](#whats-up-with-the-multiple-parameter-lists).
@@ -75,10 +75,11 @@ Laminouter is an extremely simple router. The most important design goal was to 
 
 That said, to keep things simple, we had to make some serious concessions. If the following list describes you, Laminouter is made for you:
 
-1. I only care about scala 3
+1. I only care about scala 3 (we use a lot of the scala 3 macro machinery)
 2. I don't care about nesting routes
 3. I don't really care how my routes are represented in the URL
 4. I'm fine with History-API based routing and don't need fragment (`#`) based routing
+5. Your website is always at the top level of a domain, not under some path like 'site.com/app/...'
 
 Still here? Welcome to the I-Just-Dont-Care-Club then!
 
@@ -96,7 +97,28 @@ As you can see in the example above, Laminouter uses multiple parameter lists to
 
 The drawbacks are that enum cases (and not coincidentally case classes as well), only provide the full power of them for the first parameter list. You can't destructure the second parameter list and pattern matches and they won't be part of the cases `toString` or `equals` methods, meaning that `Route.BlogPost(123)(Some(456))` is "equal" to `Route.BlogPost(123)(None)`. This also means that you have declare query string parameters as `val` to be able to access them later on.
 
-## Binary, Output And Laminar Compatibility
+### How do I support custom data types as segments/paramters of my route?
+
+You can just create a new codec and Laminouter should pick it up. Here is an example:
+
+```scala
+import java.util.UUID
+import org.felher.laminouter.Codec
+
+opaque type PostId = UUID
+
+object PostId:
+  def apply(id: UUID): PostId = id
+
+  given Codec[PostId] = Codec.stringCodec.bimap(UUID.fromString)(_.toString)
+```
+
+Here we have an opaque type `PostId` which is just a UUID. We provide a codec for it, which is just a string codec that converts the UUID to and from a string. Now you can use `PostId` as a parameter in your route. Also, note that `fromString` might throw an exception. Thas fine, for the parsing-part, `bimap` captures any exceptions and turns them into `None`.
+
+## Binary And Laminar Compatibility
+
+### Versioning
+The current version of Laminouter is 0.17.0. We will keep this version around for a few weeks and if no problems arise, we will promote it to 1.0.0, after which the following binary guarantees apply:
 
 ### Binary Compatibility
 We follow semantic versioning, i.e. semver 2.0. Keeping binary (and to a somewhat lesser degree source) compatibility as long as possible is a high priority. The next major version of the library will probably come with a new major version of Laminar which breaks binary compatibility with us.

@@ -1,6 +1,6 @@
 ThisBuild / organization         := "org.felher"
 ThisBuild / organizationName     := "Felix Herrmann"
-ThisBuild / version              := "0.17.0"
+ThisBuild / version              := "0.17.0-SNAPSHOT"
 ThisBuild / organizationHomepage := Some(url("https://felher.org"))
 ThisBuild / scalaVersion         := "3.3.3"
 
@@ -62,7 +62,7 @@ lazy val testMatrix = project
       "com.raquo"   %%% "laminar"    % "17.1.0",
       "org.felher"  %%% "laminouter" % "0.17.0",
       "org.felher"  %%% "laminouter" % "0.17.0" % Test classifier "tests",
-      "com.lihaoyi" %%% "utest"      % "0.8.4" % Test
+      "com.lihaoyi" %%% "utest"      % "0.8.4"  % Test
     ),
     jsEnv := new org.scalajs.jsenv.jsdomnodejs.JSDOMNodeJSEnv(),
     testFrameworks += new TestFramework("utest.runner.Framework"),

@@ -1,9 +1,14 @@
-package org.felher.laminiroute
+package org.felher.laminouter
 
 import org.scalajs.dom.URL
 import org.scalajs.dom.URLSearchParams
 import scala.quoted.*
 
+/**
+  * A combined codec for encoding and decoding the whole routes data structure.
+  *
+  * You should probably not use this type directly. It is summoned by the router though.
+  */
 trait Routes[A]:
   def decode(url: URL): Option[A]
   def encode(base: URL, value: A): URL
@@ -52,8 +57,16 @@ object Routes:
           println(child.tree.show)
           sys.error("unsupported tree")
 
+    private def buildDecoderForValDef(name: String, child: Symbol): Expr[URL => Option[A]] =
+      val nameExpr  = Expr(name.decapitalize)
+      val valueExpr = Ref(child).asExprOf[A]
+      '{ (url: URL) =>
+        if url.pathname == "/" + $nameExpr then Some($valueExpr)
+        else None
+      }
+
     private def buildDecoderForPathOnly(child: Symbol, params: TermParamClause): Expr[URL => Option[A]] =
-      val routeName                        = Expr(child.name)
+      val routeName                        = Expr(child.name.decapitalize)
       val valDefs: List[ValDef]            = params.params
       val codecsExpr: Expr[List[Codec[?]]] = Expr.ofList(valDefs.map(summonCodec))
 
@@ -86,7 +99,7 @@ object Routes:
         pathParams: TermParamClause,
         searchParams: TermParamClause
     ): Expr[URL => Option[A]] =
-      val routeName = Expr(child.name)
+      val routeName = Expr(child.name.decapitalize)
 
       val pathValDefs: List[ValDef]            = pathParams.params
       val pathCodecsExpr: Expr[List[Codec[?]]] = Expr.ofList(pathValDefs.map(summonCodec))
@@ -138,7 +151,8 @@ object Routes:
                 .map: (key, codec) =>
                   Option(searchParams.get(key)).flatMap(codec.decode)
 
-              val searchValues = searchKeys.zip(maybeSearchValues)
+              val searchValues = searchKeys
+                .zip(maybeSearchValues)
                 .collect:
                   case (key, Some(value)) => key -> value
                 .toMap
@@ -167,14 +181,6 @@ object Routes:
         case success: ImplicitSearchSuccess =>
           success.tree.asExprOf[Codec[?]]
 
-    private def buildDecoderForValDef(name: String, child: Symbol): Expr[URL => Option[A]] =
-      val nameExpr  = Expr(name)
-      val valueExpr = Ref(child).asExprOf[A]
-      '{ (url: URL) =>
-        if url.pathname == "/" + $nameExpr then Some($valueExpr)
-        else None
-      }
-
     private def assembleDecoder(decoders: List[Expr[URL => Option[A]]]): Expr[URL => Option[A]] =
       locally(t)
       val decoderList = Expr.ofList[URL => Option[A]](decoders)
@@ -201,13 +207,13 @@ object Routes:
 
     private def buildEncoderForValDef(name: String): Expr[(URL, ?) => URL] =
       '{ (base: URL, _: Any) =>
-        base.pathname = "/" + ${ Expr(name) }
+        base.pathname = "/" + ${ Expr(name.decapitalize) }
         base.search = ""
         base
       }
 
     private def buildEncoderForPathOnly(child: Symbol, params: TermParamClause): Expr[(URL, ?) => URL] =
-      val routeName  = Expr(child.name)
+      val routeName  = Expr(child.name.decapitalize)
       val valDefs    = params.params
       val codecsExpr = Expr.ofList(valDefs.map(summonCodec))
 
@@ -224,7 +230,7 @@ object Routes:
         pathParams: TermParamClause,
         searchParams: TermParamClause
     ): Expr[(URL, ?) => URL] =
-      val routeName = Expr(child.name)
+      val routeName = Expr(child.name.decapitalize)
 
       val pathValDefs    = pathParams.params
       val pathCodecsExpr = Expr.ofList(pathValDefs.map(summonCodec))
@@ -325,3 +331,9 @@ object Routes:
     checkAndStripPrefix(url.pathname)
       .flatMap(getSegments)
       .flatMap(uriDecode)
+      .flatMap(uriDecode)
+
+  extension (s: String)
+    def decapitalize: String =
+      if s.nonEmpty && s.head.isUpper then s.tail.prepended(s.head.toLower)
+      else s
