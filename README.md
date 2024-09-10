@@ -6,10 +6,11 @@ Laminouter is an ergonomic, minimalistic-to-a-fault router for Laminar on Scala 
 - [Usage](#usage)
 - [Who should use it](#who-should-use-it)
 - [Notes](#notes)
-  - [How get rid of the `asInstanceOf`?](#how-get-rid-of-the-asinstanceof)
+  - [How to get rid of the `asInstanceOf`?](#how-to-get-rid-of-the-asinstanceof)
   - [What's up with the multiple parameter lists?](#whats-up-with-the-multiple-parameter-lists)
+  - [How do I support custom data types as segments/parameters of my route?](#how-do-i-support-custom-data-types-as-segmentsparameters-of-my-route)
 - [Binary And Laminar Compatibility](#binary-and-laminar-compatibility)
-- [Contributions](#contributions)
+- [Contributions, Design Goals and Extensions](#contributions-design-goals-and-extensions)
 
 ## Usage
 
@@ -24,7 +25,7 @@ The usage is extremely simple.
     ```scala
     enum Route derives CanEqual:
         case Home                                          // site.com/home
-        case Category(category: String))                   // site.com/category/scala
+        case Category(category: String)                    // site.com/category/scala
         case BlogPost(post: Int)(val comment: Option[Int]) // site.com/blogPost/123 or
                                                            // site.com/blogPost/123?comment=456
     ```
@@ -49,7 +50,7 @@ The usage is extremely simple.
         p("Comment: ", child.text <-- routeData.map(_.comment.toString))
       )
     ```
-4. Get a signal of the current route and do something with it:
+5. Get a signal of the current route and do something with it:
     ```scala
     div(
         child <-- router
@@ -61,9 +62,9 @@ The usage is extremely simple.
               case _: Route.BlogPost => renderBlogPost(sig.asInstanceOf)
     )
     ```
-    If you find the `asInstanceOf` ugly, take a look at the [notes](#how-get-rid-of-the-asinstanceof).
+    If you find the `asInstanceOf` ugly, take a look at the [notes](#how-to-get-rid-of-the-asinstanceof).
 
-5. Create buttons or links using the router:
+6. Create buttons or links using the router:
     ```scala
     a(router.target(Route.Home), "Home")
     button(router.target(Route.BlogPost(123)(Some(456))), "Blog Post 123 with comment 456")
@@ -84,20 +85,20 @@ That said, to keep things simple, we had to make some serious concessions. If th
 Still here? Welcome to the I-Just-Dont-Care-Club then!
 
 ## Notes
-### How get rid of the `asInstanceOf`?
+### How to get rid of the `asInstanceOf`?
 Laminouter only gives you a signal of the current route. That's by design. At the time of this writing, Laminar doesn't have a way to destructure an enum in a typesafe way. But it will. As soon as [116](https://github.com/raquo/Airstream/pull/116) is merged, we will be able to do it just fine.
 
 Until then, you can either copy the code from the PR, or copy good-enough solution from my gist [here](https://gist.github.com/felher/5515eb1124268b0e10eadc78778f49a8).
 
-Or, of course, you can switch to, for example, [Waypoint](https://github.com/raquo/Waypoint), which does include a `SplitRender` abstraction which let's you do this, albeit without exhaustivity checking.
+Or, of course, you can switch to, for example, [Waypoint](https://github.com/raquo/Waypoint), which does include a `SplitRender` abstraction which lets you do this, albeit without exhaustivity checking.
 
 ### What's up with the multiple parameter lists?
 
-As you can see in the example above, Laminouter uses multiple parameter lists to separate path parameters from search/query parameter. This has a couple of drawbacks. It was only chosen because the most important aspect of this library is ergonomics.
+As you can see in the example above, Laminouter uses multiple parameter lists to separate path parameters from search/query parameters. This has a couple of drawbacks. It was only chosen because the most important aspect of this library is ergonomics.
 
-The drawbacks are that enum cases (and not coincidentally case classes as well), only provide the full power of them for the first parameter list. You can't destructure the second parameter list and pattern matches and they won't be part of the cases `toString` or `equals` methods, meaning that `Route.BlogPost(123)(Some(456))` is "equal" to `Route.BlogPost(123)(None)`. This also means that you have declare query string parameters as `val` to be able to access them later on.
+The drawbacks are that enum cases (and not coincidentally case classes as well), only provide the full power of them for the first parameter list. You can't destructure the second parameter list using pattern matches and additional parameter lists won't be part of the cases `toString` or `equals` methods, meaning that `Route.BlogPost(123)(Some(456))` is "equal" to `Route.BlogPost(123)(None)`. This also means that you have to declare query string parameters as `val` to be able to access them later on.
 
-### How do I support custom data types as segments/paramters of my route?
+### How do I support custom data types as segments/parameters of my route?
 
 You can just create a new codec and Laminouter should pick it up. Here is an example:
 
@@ -113,7 +114,9 @@ object PostId:
   given Codec[PostId] = Codec.stringCodec.bimap(UUID.fromString)(_.toString)
 ```
 
-Here we have an opaque type `PostId` which is just a UUID. We provide a codec for it, which is just a string codec that converts the UUID to and from a string. Now you can use `PostId` as a parameter in your route. Also, note that `fromString` might throw an exception. Thas fine, for the parsing-part, `bimap` captures any exceptions and turns them into `None`.
+Here we have an opaque type `PostId`, which is just a UUID. We provide a codec for it, which is just a string codec that converts the UUID to and from a string. Now you can use `PostId` as a parameter in your route. Also, note that `fromString` might throw an exception. That's fine. For the parsing function, `bimap` captures any exceptions and turns them into `None`.
+
+Note that you need to add the following dependency if you want to use UUIDs from javascript: [scalajs-java-securerandom](https://github.com/scala-js/scala-js-java-securerandom).
 
 ## Binary And Laminar Compatibility
 
@@ -138,6 +141,8 @@ We generate a compatibility matrix for all releases, which lists the Laminar ver
 | Laminar 17.0.0 | scala 3.3 |
 | Laminar 17.1.0 | scala 3.3 |
 
-## Contributions
+## Contributions, Design Goals and Extensions
 
 We welcome contributions. Create an issue if you need something or go straight to creating a PR!
+
+Just note that the main design goal of this library is to make route declaration and usage as simple as possible. That means that certain features just aren't going to be added. This in turn means that people might well ditch this library if they need more features later on. To make the migration path as obvious as possible, we will not add features that are not already in Waypoint. At any point, it should be pretty simple to upgrade to Waypoint.
