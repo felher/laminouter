@@ -1,6 +1,6 @@
 ThisBuild / organization         := "org.felher"
 ThisBuild / organizationName     := "Felix Herrmann"
-ThisBuild / version              := "0.17.0-SNAPSHOT"
+ThisBuild / version              := "0.17.0"
 ThisBuild / organizationHomepage := Some(url("https://felher.org"))
 ThisBuild / scalaVersion         := "3.3.3"
 
