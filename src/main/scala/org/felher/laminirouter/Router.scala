@@ -26,6 +26,11 @@ trait Router[A]:
     */
   def target(a: A): Binder[HtmlElement]
 
+  /**
+    * Navigate immediately to a route.
+    */
+  def goTo(a: A): Unit
+
 object Router:
   private def getCurrentURL(): dom.URL = dom.URL(dom.window.location.href)
   private val currentURL               = Var(getCurrentURL())
@@ -49,3 +54,9 @@ object Router:
             dom.window.history.pushState(null, "", newURL.toString)
             currentURL.set(newURL)
           )).bind(el)
+
+      def goTo(a: A): Unit =
+        val current = Router.getCurrentURL()
+        val newURL  = routes.encode(current, a)
+        dom.window.history.pushState(null, "", newURL.toString)
+        Router.currentURL.set(newURL)
