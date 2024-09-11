@@ -18,7 +18,7 @@ The usage is extremely simple.
 1. Import the dependency
     ```
     libraryDependencies ++= Seq(
-      "org.felher"  %%% "laminouter" % "0.17.0"
+      "org.felher"  %%% "laminouter" % "0.17.1"
     )
     ```
 2. Declare your routes:
@@ -121,7 +121,7 @@ Note that you need to add the following dependency if you want to use UUIDs from
 ## Binary And Laminar Compatibility
 
 ### Versioning
-The current version of Laminouter is 0.17.0. We will keep this version around for a few weeks and if no problems arise, we will promote it to 1.0.0, after which the following binary guarantees apply:
+The current version of Laminouter is 0.17.1. We will keep this version around for a few weeks and if no problems arise, we will promote it to 1.0.0, after which the following binary guarantees apply:
 
 ### Binary Compatibility
 We follow semantic versioning, i.e. semver 2.0. Keeping binary (and to a somewhat lesser degree source) compatibility as long as possible is a high priority. The next major version of the library will probably come with a new major version of Laminar which breaks binary compatibility with us.
@@ -129,17 +129,17 @@ We follow semantic versioning, i.e. semver 2.0. Keeping binary (and to a somewha
 When we need to break binary compatibility for a reason other than to keep up with Laminar, we will consider changing the namespace of the library in the process.
 
 ### Laminar Compatibility
-Laminouter doesn't list Laminar as normal dependency, but as "provided", so that you can use it with any version of Laminar you want. For example, Laminouter 0.17.0 works with Laminar 15, 16 and 17. Chances are that when Laminar updates to 18, this library will just work without any changes and will not need a new release.
+Laminouter doesn't list Laminar as normal dependency, but as "provided", so that you can use it with any version of Laminar you want. For example, Laminouter 0.17.1 works with Laminar 15, 16 and 17. Chances are that when Laminar updates to 18, this library will just work without any changes and will not need a new release.
 
 We generate a compatibility matrix for all releases, which lists the Laminar versions as well as the Scala versions the library is binary compatible with. Here it is:
 
-||Laminouter 0.17.0|
-|-|-|
-| Laminar 0.14.5 | scala 3.3 |
-| Laminar 15.0.1 | scala 3.3 |
-| Laminar 16.0.0 | scala 3.3 |
-| Laminar 17.0.0 | scala 3.3 |
-| Laminar 17.1.0 | scala 3.3 |
+||Laminouter 0.17.0|Laminouter 0.17.1|
+|-|-|-|
+| Laminar 0.14.5 | scala 3.3|scala 3.3 |
+| Laminar 15.0.1 | scala 3.3|scala 3.3 |
+| Laminar 16.0.0 | scala 3.3|scala 3.3 |
+| Laminar 17.0.0 | scala 3.3|scala 3.3 |
+| Laminar 17.1.0 | scala 3.3|scala 3.3 |
 
 ## Contributions, Design Goals and Extensions
 

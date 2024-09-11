@@ -60,8 +60,8 @@ lazy val testMatrix = project
   .settings(
     libraryDependencies ++= Seq(
       "com.raquo"   %%% "laminar"    % "17.1.0",
-      "org.felher"  %%% "laminouter" % "0.17.0",
-      "org.felher"  %%% "laminouter" % "0.17.0" % Test classifier "tests",
+      "org.felher"  %%% "laminouter" % "0.17.1",
+      "org.felher"  %%% "laminouter" % "0.17.1" % Test classifier "tests",
       "com.lihaoyi" %%% "utest"      % "0.8.4"  % Test
     ),
     jsEnv := new org.scalajs.jsenv.jsdomnodejs.JSDOMNodeJSEnv(),
@@ -74,7 +74,7 @@ lazy val testMatrix = project
       )
 
       val laminarVersions    = List("0.14.5", "15.0.1", "16.0.0", "17.0.0", "17.1.0")
-      val laminouterVersions = List("0.17.0")
+      val laminouterVersions = List("0.17.0", "0.17.1")
       val scalaVersions      = List("3.3.3")
       val allTestKeys        = for {
         scalaVersion      <- scalaVersions
