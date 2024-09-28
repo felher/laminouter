@@ -2,7 +2,7 @@ ThisBuild / organization         := "org.felher"
 ThisBuild / organizationName     := "Felix Herrmann"
 ThisBuild / version              := "0.17.1"
 ThisBuild / organizationHomepage := Some(url("https://felher.org"))
-ThisBuild / scalaVersion         := "3.3.3"
+ThisBuild / scalaVersion         := "3.3.4"
 
 ThisBuild / scmInfo := Some(
   ScmInfo(
@@ -75,7 +75,7 @@ lazy val testMatrix = project
 
       val laminarVersions    = List("0.14.5", "15.0.1", "16.0.0", "17.0.0", "17.1.0")
       val laminouterVersions = List("0.17.0", "0.17.1")
-      val scalaVersions      = List("3.3.3")
+      val scalaVersions      = List("3.3.4")
       val allTestKeys        = for {
         scalaVersion      <- scalaVersions
         laminarVersion    <- laminarVersions
@@ -95,7 +95,7 @@ lazy val testMatrix = project
 
       val results = allTestKeys.foldLeft(Map.empty[CompatTestKey, Boolean])((results, testKey) => {
         // this code is tricky. The scalajs plugin changes the dependency list depending on the scala version.
-        // So just adding `scalaVersion := "3.3.3"` to the `newSettings`
+        // So just adding `scalaVersion := "3.3.4"` to the `newSettings`
         // list doesn't work, because the old dependency list is out of date.
         //
         // Instead of adding a setting, we set the new scala using the `set` command, which seems
