@@ -47,7 +47,7 @@ lazy val root = project
     ),
     libraryDependencies ++= Seq(
       "org.scala-js" %%% "scalajs-dom" % "2.8.0",
-      "com.raquo"    %%% "laminar"     % "17.1.0" % Provided,
+      "com.raquo"    %%% "laminar"     % "17.2.0" % Provided,
       "com.lihaoyi"  %%% "utest"       % "0.8.4"  % Test
     ),
     jsEnv                  := new org.scalajs.jsenv.jsdomnodejs.JSDOMNodeJSEnv(),
@@ -59,7 +59,7 @@ lazy val testMatrix = project
   .enablePlugins(ScalaJSPlugin)
   .settings(
     libraryDependencies ++= Seq(
-      "com.raquo"   %%% "laminar"    % "17.1.0",
+      "com.raquo"   %%% "laminar"    % "17.2.0",
       "org.felher"  %%% "laminouter" % "0.17.1",
       "org.felher"  %%% "laminouter" % "0.17.1" % Test classifier "tests",
       "com.lihaoyi" %%% "utest"      % "0.8.4"  % Test
