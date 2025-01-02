@@ -73,7 +73,7 @@ lazy val testMatrix = project
           laminouterVersion: String
       )
 
-      val laminarVersions    = List("0.14.5", "15.0.1", "16.0.0", "17.0.0", "17.1.0")
+      val laminarVersions    = List("0.14.5", "15.0.1", "16.0.0", "17.0.0", "17.1.0", "17.2.0")
       val laminouterVersions = List("0.17.0", "0.17.1")
       val scalaVersions      = List("3.3.4")
       val allTestKeys        = for {

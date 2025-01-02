@@ -140,6 +140,7 @@ We generate a compatibility matrix for all releases, which lists the Laminar ver
 | Laminar 16.0.0 | scala 3.3|scala 3.3 |
 | Laminar 17.0.0 | scala 3.3|scala 3.3 |
 | Laminar 17.1.0 | scala 3.3|scala 3.3 |
+| Laminar 17.2.0 | scala 3.3|scala 3.3 |
 
 ## Contributions, Design Goals and Extensions
 
