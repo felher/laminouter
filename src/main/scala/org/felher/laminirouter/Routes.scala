@@ -173,8 +173,7 @@ object Routes:
         .of[Codec]
         .appliedTo(vd.tpt.tpe.asType match
           case '[Option[t]] => TypeRepr.of[t]
-          case _            => vd.tpt.tpe
-        )
+          case _            => vd.tpt.tpe)
       Implicits.search(codecType) match
         case _: ImplicitSearchFailure       =>
           sys.error(s"Cannot find implicit codec: ${codecType.show}")
