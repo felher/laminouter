@@ -47,7 +47,7 @@ lazy val root = project
     ),
     libraryDependencies ++= Seq(
       "org.scala-js" %%% "scalajs-dom" % "2.8.0",
-      "com.raquo"    %%% "laminar"     % "17.2.0" % Provided,
+      "com.raquo"    %%% "laminar"     % "17.2.1" % Provided,
       "com.lihaoyi"  %%% "utest"       % "0.8.4"  % Test
     ),
     jsEnv                  := new org.scalajs.jsenv.jsdomnodejs.JSDOMNodeJSEnv(),
